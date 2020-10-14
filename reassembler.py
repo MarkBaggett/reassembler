@@ -19,37 +19,68 @@ import sys
 def rfc791(fragmentsin):
     buffer=StringIO()
     for pkt in fragmentsin:
-         buffer.seek(pkt[IP].frag*8)
-         buffer.write(pkt[Raw].load)
-    return buffer.getvalue()
+        if pkt[IP].frag == 0:
+            wrapper = pkt
+        buffer.seek(pkt[IP].frag*8)
+        buffer.write(bytes(pkt[IP].payload))
+    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
+    del wrapper[IP].len
+    wrapper[IP].flags=0
+    del wrapper[IP].chksum
+    return wrapper
 
 def first(fragmentsin):
     buffer=StringIO()
     for pkt in fragmentsin[::-1]:
-         buffer.seek(pkt[IP].frag*8)
-         buffer.write(pkt[Raw].load)
-    return buffer.getvalue()
+        if pkt[IP].frag == 0:
+            wrapper = pkt
+        buffer.seek(pkt[IP].frag*8)
+        buffer.write(bytes(pkt[IP].payload))
+    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
+    del wrapper[IP].len
+    wrapper[IP].flags=0
+    del wrapper[IP].chksum
+    return wrapper
+
 
 def bsdright(fragmentsin):
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag):
-         buffer.seek(pkt[IP].frag*8)
-         buffer.write(pkt[Raw].load)
-    return buffer.getvalue()
+        if pkt[IP].frag == 0:
+            wrapper = pkt
+        buffer.seek(pkt[IP].frag*8)
+        buffer.write(bytes(pkt[IP].payload))
+    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
+    del wrapper[IP].len
+    wrapper[IP].flags=0
+    del wrapper[IP].chksum
+    return wrapper
 
 def bsd(fragmentsin):
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key=lambda x:x[IP].frag)[::-1]:
-         buffer.seek(pkt[IP].frag*8)
-         buffer.write(pkt[Raw].load)
-    return buffer.getvalue()
-
+        if pkt[IP].frag == 0:
+            wrapper = pkt
+        buffer.seek(pkt[IP].frag*8)
+        buffer.write(bytes(pkt[IP].payload))
+    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
+    del wrapper[IP].len
+    wrapper[IP].flags=0
+    del wrapper[IP].chksum
+    return wrapper
+ 
 def linux(fragmentsin):
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True):
-         buffer.seek(pkt[IP].frag*8)
-         buffer.write(pkt[Raw].load)
-    return buffer.getvalue()
+        if pkt[IP].frag == 0:
+            wrapper = pkt
+        buffer.seek(pkt[IP].frag*8)
+        buffer.write(bytes(pkt[IP].payload))
+    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
+    del wrapper[IP].len
+    wrapper[IP].flags=0
+    del wrapper[IP].chksum
+    return wrapper
 
 def genjudyfrags():
     pkts=scapy.plist.PacketList()
@@ -61,34 +92,36 @@ def genjudyfrags():
     pkts.append(IP(frag=9)/("6"*24))
     return pkts
 
-def processfrags(fragmenttrain): 
+def processfrags(fragmenttrain):
+    def print_frag(bytes_in):
+        if options.bytes:
+            print(bytes_in)
+            return
+        as_str = bytes_in
+        try:
+            as_str = bytes_in.decode()
+        except:
+            pass
+        print(as_str)
+        return      
     print("Reassembled using policy: First (Windows, SUN, MacOS, HPUX)")
-    print(first(fragmenttrain))
-    print("Reassembled using policy: Last/RFC791 (Cisco)")
-    print(rfc791(fragmenttrain))
-    print("Reassembled using policy: Linux (Umm.. Linux)")
-    print(linux(fragmenttrain))
-    print("Reassembled using policy: BSD (AIX, FreeBSD, HPUX, VMS)")
-    print(bsd(fragmenttrain))
-    print("Reassembled using policy: BSD-Right (HP Jet Direct)")
-    print(bsdright(fragmenttrain))
+    print_frag(first(fragmenttrain)[Raw].load)
+    print("\nReassembled using policy: Last/RFC791 (Cisco)")
+    print_frag(rfc791(fragmenttrain)[Raw].load)
+    print("\nReassembled using policy: Linux (Umm.. Linux)")
+    print_frag(linux(fragmenttrain)[Raw].load)
+    print("\nReassembled using policy: BSD (AIX, FreeBSD, HPUX, VMS)")
+    print_frag(bsd(fragmenttrain)[Raw].load)
+    print("\nReassembled using policy: BSD-Right (HP Jet Direct)")
+    print_frag(bsdright(fragmenttrain)[Raw].load)
     
 def writefrags(fragmenttrain): 
-    fileobj=open(options.prefix+"-first","wb")
-    fileobj.write(first(fragmenttrain))
-    fileobj.close()
-    fileobj=open(options.prefix+"-rfc791","wb")
-    fileobj.write(rfc791(fragmenttrain))
-    fileobj.close()
-    fileobj=open(options.prefix+"-bsd","wb")
-    fileobj.write(bsd(fragmenttrain))
-    fileobj.close()
-    fileobj=open(options.prefix+"-bsdright","wb")
-    fileobj.write(bsdright(fragmenttrain))
-    fileobj.close()
-    fileobj=open(options.prefix+"-linux","wb")
-    fileobj.write(linux(fragmenttrain))
-    fileobj.close()
+    wrpcap(options.prefix+"-first.pcap", first(fragmenttrain))
+    wrpcap(options.prefix+"-rfc791.pcap", rfc791(fragmenttrain))
+    wrpcap(options.prefix+"-bsd.pcap", bsd(fragmenttrain))
+    wrpcap(options.prefix+"-bsdright.pcap", bsdright(fragmenttrain))
+    wrpcap(options.prefix+"-linux.pcap", linux(fragmenttrain))
+    
     
 def main():
     print("Reading fragmented packets from disk.")
@@ -106,24 +139,26 @@ def main():
 
     for ipid in list(uniqipids.keys()):
         print("Packet fragments found.  Collecting fragments now.")
-        fragmenttrain = [ a for a in fragmentedpackets if a[IP].id == ipid and a.haslayer(Raw) ] 
+        fragmenttrain = [ a for a in fragmentedpackets if a[IP].id == ipid ] 
         processit = input("Reassemble packets between hosts "+str(fragmenttrain[0][IP].src)+" and "+str(fragmenttrain[0][IP].dst)+"? [Y/N]")
         if str(processit).lower()=="y":
-            if options.write:
-                writefrags(fragmenttrain)
-            else:
+            if not options.quiet:
                 processfrags(fragmenttrain)
+            if not options.nowrite:
+                writefrags(fragmenttrain)
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('pcap',default="",help='Read the specified packet capture')
     parser.add_argument('-d','--demo',action='store_true', help='Generate classic fragment test pattern and reassemble it.')
-    parser.add_argument('-w','--write',action='store_true', help='Write 5 files to disk with the payloads.')
+    parser.add_argument('-n','--no-write',action='store_true', dest="nowrite", help='Suppress writing 5 files to disk with the payloads.')
+    parser.add_argument('-b','--bytes',action='store_true',  help='Process Payloads as bytes and never as strings.')
+    parser.add_argument('-q','--quiet',action='store_true',  help='Do not print payloads to screen.')  
     parser.add_argument('-p','--prefix',default='reassembled', help='Specify the prefix for file names')
 
     if (len(sys.argv)==1):
-       parser.print_help()
-       sys.exit()
+        parser.print_help()
+        sys.exit()
 
     options=parser.parse_args()
 
