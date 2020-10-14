@@ -1,9 +1,9 @@
 # reaassembler
-Scapy packet fragment reassembly engines
+Scapy packet fragment reassembly engines.
 
-This module will reassemble fragmented packets using common used fragmentation reassebmly techniques.  It then prints the payloads showing the result of each reassembly engine.  Alternatively the -w option can be used to write 5 separate payload files.
+This module will reassemble fragmented packets using common used fragmentation reassebmly techniques.  It then generates 5 pcap files.  One for each of the diffrent reassembly engines. It also prints the payloads to the screen.
 
-This is a rewrite of the original released in 2012 to support Python3 and Scapy3k.
+This is a rewrite of the original released in 2012 to support Python3.
 
 [Associated GIAC SANS Gold Paper](https://www.sans.org/reading-room/whitepapers/tools/ip-fragment-reassembly-scapy-33969)
 
