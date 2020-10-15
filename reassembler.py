@@ -21,28 +21,28 @@ def rfc791(fragmentsin):
     buffer=StringIO()
     for pkt in fragmentsin:
         if pkt[IP].frag == 0:
-            wrapper = pkt.copy()
+            first_fragment = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
-    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
-    del wrapper[IP].len
-    wrapper[IP].flags=0
-    del wrapper[IP].chksum
-    return wrapper
+    first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
+    del first_fragment[IP].len
+    first_fragment[IP].flags=0
+    del first_fragment[IP].chksum
+    return first_fragment
 
 def first(fragmentsin):
     #First to arrive temporaly wins
     buffer=StringIO()
     for pkt in fragmentsin[::-1]:
         if pkt[IP].frag == 0:
-            wrapper = pkt.copy()
+            first_fragment = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
-    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
-    del wrapper[IP].len
-    wrapper[IP].flags=0
-    del wrapper[IP].chksum
-    return wrapper
+    first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
+    del first_fragment[IP].len
+    first_fragment[IP].flags=0
+    del first_fragment[IP].chksum
+    return first_fragment
 
 
 def bsdright(fragmentsin):
@@ -50,56 +50,56 @@ def bsdright(fragmentsin):
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag):
         if pkt[IP].frag == 0:
-            wrapper = pkt.copy()
+            first_fragment = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
-    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
-    del wrapper[IP].len
-    wrapper[IP].flags=0
-    del wrapper[IP].chksum
-    return wrapper
+    first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
+    del first_fragment[IP].len
+    first_fragment[IP].flags=0
+    del first_fragment[IP].chksum
+    return first_fragment
 
 def bsd(fragmentsin):
     #lowest offset, Tie to first
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key=lambda x:x[IP].frag)[::-1]:
         if pkt[IP].frag == 0:
-            wrapper = pkt.copy()
+            first_fragment = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
-    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
-    del wrapper[IP].len
-    wrapper[IP].flags=0
-    del wrapper[IP].chksum
-    return wrapper
+    first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
+    del first_fragment[IP].len
+    first_fragment[IP].flags=0
+    del first_fragment[IP].chksum
+    return first_fragment
  
 def linux(fragmentsin):
     #Lowest offset, Tie to last
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True):
         if pkt[IP].frag == 0:
-            wrapper = pkt.copy()
+            first_fragment = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
-    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
-    del wrapper[IP].len
-    wrapper[IP].flags=0
-    del wrapper[IP].chksum
-    return wrapper
+    first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
+    del first_fragment[IP].len
+    first_fragment[IP].flags=0
+    del first_fragment[IP].chksum
+    return first_fragment
 
 def other(fragmentsin):
     #highest offset, Tie to first
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True)[::-1]:
         if pkt[IP].frag == 0:
-            wrapper = pkt.copy
+            first_fragment = pkt.copy
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
-    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
-    del wrapper[IP].len
-    wrapper[IP].flags=0
-    del wrapper[IP].chksum
-    return wrapper
+    first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
+    del first_fragment[IP].len
+    first_fragment[IP].flags=0
+    del first_fragment[IP].chksum
+    return first_fragment
     
     #The other policy sorted(x, key = lambda y:y[1])[::-1]
 
