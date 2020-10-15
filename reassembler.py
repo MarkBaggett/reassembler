@@ -16,6 +16,20 @@ import argparse
 import os
 import sys
 
+
+def clean_reassembled_packets(pkt_in):
+    pkt_in[IP].flags=0
+    del pkt_in[IP].chksum
+    del pkt_in[IP].len
+    newpkt = Ether() / pkt_in[IP]
+    if pkt_in.haslayer(Ether):
+        newpkt[Ether].src = pkt_in[Ether].src
+        newpkt[Ether].dst = pkt_in[Ether].dst
+    if hasattr( newpkt[IP].payload.__class__, "chksum") and not options.checksum:
+        del newpkt[IP].payload.chksum
+    return newpkt
+
+
 def rfc791(fragmentsin):
     #Last to arrive temporaly wins
     buffer=StringIO()
@@ -25,10 +39,7 @@ def rfc791(fragmentsin):
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
-    del first_fragment[IP].len
-    first_fragment[IP].flags=0
-    del first_fragment[IP].chksum
-    return first_fragment
+    return clean_reassembled_packets(first_fragment)
 
 def first(fragmentsin):
     #First to arrive temporaly wins
@@ -39,10 +50,7 @@ def first(fragmentsin):
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
-    del first_fragment[IP].len
-    first_fragment[IP].flags=0
-    del first_fragment[IP].chksum
-    return first_fragment
+    return clean_reassembled_packets(first_fragment)
 
 
 def bsdright(fragmentsin):
@@ -54,10 +62,7 @@ def bsdright(fragmentsin):
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
-    del first_fragment[IP].len
-    first_fragment[IP].flags=0
-    del first_fragment[IP].chksum
-    return first_fragment
+    return clean_reassembled_packets(first_fragment)
 
 def bsd(fragmentsin):
     #lowest offset, Tie to first
@@ -68,10 +73,7 @@ def bsd(fragmentsin):
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
-    del first_fragment[IP].len
-    first_fragment[IP].flags=0
-    del first_fragment[IP].chksum
-    return first_fragment
+    return clean_reassembled_packets(first_fragment)
  
 def linux(fragmentsin):
     #Lowest offset, Tie to last
@@ -82,10 +84,7 @@ def linux(fragmentsin):
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
-    del first_fragment[IP].len
-    first_fragment[IP].flags=0
-    del first_fragment[IP].chksum
-    return first_fragment
+    return clean_reassembled_packets(first_fragment)
 
 def other(fragmentsin):
     #highest offset, Tie to first
@@ -96,13 +95,8 @@ def other(fragmentsin):
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
-    del first_fragment[IP].len
-    first_fragment[IP].flags=0
-    del first_fragment[IP].chksum
-    return first_fragment
+    return clean_reassembled_packets(first_fragment)
     
-
-
 
 def genjudyfrags():
     pkts=scapy.plist.PacketList()
@@ -141,12 +135,12 @@ def processfrags(fragmenttrain):
     
 def writefrags(fragmenttrain): 
     ipid = str(fragmenttrain[0][IP].id)
-    wrpcap(options.prefix+ipid+"-first.pcap", first(fragmenttrain))
-    wrpcap(options.prefix+ipid+"-rfc791.pcap", rfc791(fragmenttrain))
-    wrpcap(options.prefix+ipid+"-bsd.pcap", bsd(fragmenttrain))
-    wrpcap(options.prefix+ipid+"-bsdright.pcap", bsdright(fragmenttrain))
-    wrpcap(options.prefix+ipid+"-linux.pcap", linux(fragmenttrain))
-    wrpcap(options.prefix+ipid+"-other.pcap", other(fragmenttrain))
+    wrpcap(f"{options.prefix}-{ipid}-first.pcap", first(fragmenttrain))
+    wrpcap(f"{options.prefix}-{ipid}-rfc791.pcap", rfc791(fragmenttrain))
+    wrpcap(f"{options.prefix}-{ipid}-bsd.pcap", bsd(fragmenttrain))
+    wrpcap(f"{options.prefix}-{ipid}-bsdright.pcap", bsdright(fragmenttrain))
+    wrpcap(f"{options.prefix}-{ipid}-linux.pcap", linux(fragmenttrain))
+    wrpcap(f"{options.prefix}-{ipid}-other.pcap", other(fragmenttrain))
     
     
 def main():
@@ -181,6 +175,8 @@ if __name__ == '__main__':
     parser.add_argument('-b','--bytes',action='store_true',  help='Process Payloads as bytes and never as strings.')
     parser.add_argument('-q','--quiet',action='store_true',  help='Do not print payloads to screen.')  
     parser.add_argument('-p','--prefix',default='reassembled', help='Specify the prefix for file names')
+    parser.add_argument('-c','--checksum',action="store_true", help='Do not recalculate transport layer protocol checksums.')
+    
 
     if (len(sys.argv)==1):
         parser.print_help()
