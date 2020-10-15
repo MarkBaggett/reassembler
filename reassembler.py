@@ -92,7 +92,7 @@ def other(fragmentsin):
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True)[::-1]:
         if pkt[IP].frag == 0:
-            first_fragment = pkt.copy
+            first_fragment = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     first_fragment[IP].payload = first_fragment[IP].payload.__class__(bytes(buffer.getvalue()))
@@ -101,7 +101,7 @@ def other(fragmentsin):
     del first_fragment[IP].chksum
     return first_fragment
     
-    #The other policy sorted(x, key = lambda y:y[1])[::-1]
+
 
 
 def genjudyfrags():
@@ -136,13 +136,17 @@ def processfrags(fragmenttrain):
     print_frag(bsd(fragmenttrain)[Raw].load)
     print("\nReassembled using policy: BSD-Right (HP Jet Direct)")
     print_frag(bsdright(fragmenttrain)[Raw].load)
+    print("\nReassembled using policy: Other (Some IoT Device somewhere)")
+    print_frag(other(fragmenttrain)[Raw].load)
     
 def writefrags(fragmenttrain): 
-    wrpcap(options.prefix+"-first.pcap", first(fragmenttrain))
-    wrpcap(options.prefix+"-rfc791.pcap", rfc791(fragmenttrain))
-    wrpcap(options.prefix+"-bsd.pcap", bsd(fragmenttrain))
-    wrpcap(options.prefix+"-bsdright.pcap", bsdright(fragmenttrain))
-    wrpcap(options.prefix+"-linux.pcap", linux(fragmenttrain))
+    ipid = str(fragmenttrain[0][IP].id)
+    wrpcap(options.prefix+ipid+"-first.pcap", first(fragmenttrain))
+    wrpcap(options.prefix+ipid+"-rfc791.pcap", rfc791(fragmenttrain))
+    wrpcap(options.prefix+ipid+"-bsd.pcap", bsd(fragmenttrain))
+    wrpcap(options.prefix+ipid+"-bsdright.pcap", bsdright(fragmenttrain))
+    wrpcap(options.prefix+ipid+"-linux.pcap", linux(fragmenttrain))
+    wrpcap(options.prefix+ipid+"-other.pcap", other(fragmenttrain))
     
     
 def main():
