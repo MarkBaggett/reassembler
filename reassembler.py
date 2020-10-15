@@ -21,7 +21,7 @@ def rfc791(fragmentsin):
     buffer=StringIO()
     for pkt in fragmentsin:
         if pkt[IP].frag == 0:
-            wrapper = pkt
+            wrapper = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
@@ -35,7 +35,7 @@ def first(fragmentsin):
     buffer=StringIO()
     for pkt in fragmentsin[::-1]:
         if pkt[IP].frag == 0:
-            wrapper = pkt
+            wrapper = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
@@ -48,9 +48,9 @@ def first(fragmentsin):
 def bsdright(fragmentsin):
     #highest offset , Tie to last temporaly
     buffer=StringIO()
-    for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True):
+    for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag):
         if pkt[IP].frag == 0:
-            wrapper = pkt
+            wrapper = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
@@ -62,9 +62,9 @@ def bsdright(fragmentsin):
 def bsd(fragmentsin):
     #lowest offset, Tie to first
     buffer=StringIO()
-    for pkt in sorted(fragmentsin, key=lambda x:x[IP].frag, reverse=True)[::-1]:
+    for pkt in sorted(fragmentsin, key=lambda x:x[IP].frag)[::-1]:
         if pkt[IP].frag == 0:
-            wrapper = pkt
+            wrapper = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
@@ -76,9 +76,9 @@ def bsd(fragmentsin):
 def linux(fragmentsin):
     #Lowest offset, Tie to last
     buffer=StringIO()
-    for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag):
+    for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True):
         if pkt[IP].frag == 0:
-            wrapper = pkt
+            wrapper = pkt.copy()
         buffer.seek(pkt[IP].frag*8)
         buffer.write(bytes(pkt[IP].payload))
     wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
@@ -87,17 +87,31 @@ def linux(fragmentsin):
     del wrapper[IP].chksum
     return wrapper
 
-#The other policy sorted(x, key = lambda y:y[1])[::-1]
+def other(fragmentsin):
+    #highest offset, Tie to first
+    buffer=StringIO()
+    for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True)[::-1]:
+        if pkt[IP].frag == 0:
+            wrapper = pkt.copy
+        buffer.seek(pkt[IP].frag*8)
+        buffer.write(bytes(pkt[IP].payload))
+    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
+    del wrapper[IP].len
+    wrapper[IP].flags=0
+    del wrapper[IP].chksum
+    return wrapper
+    
+    #The other policy sorted(x, key = lambda y:y[1])[::-1]
 
 
 def genjudyfrags():
     pkts=scapy.plist.PacketList()
-    pkts.append(IP(flags="MF",frag=0)/("1"*24))
-    pkts.append(IP(flags="MF",frag=4)/("2"*16))
-    pkts.append(IP(flags="MF",frag=6)/("3"*24))
-    pkts.append(IP(flags="MF",frag=1)/("4"*32))
-    pkts.append(IP(flags="MF",frag=6)/("5"*24))
-    pkts.append(IP(frag=9)/("6"*24))
+    pkts.append(IP(flags="MF",frag=0)/ICMP()/("1"*24))
+    pkts.append(IP(flags="MF",frag=5)/("2"*16))
+    pkts.append(IP(flags="MF",frag=7)/("3"*24))
+    pkts.append(IP(flags="MF",frag=2)/("4"*32))
+    pkts.append(IP(flags="MF",frag=7)/("5"*24))
+    pkts.append(IP(frag=10)/("6"*24))
     return pkts
 
 def processfrags(fragmenttrain):
