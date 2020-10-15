@@ -17,6 +17,7 @@ import os
 import sys
 
 def rfc791(fragmentsin):
+    #Last to arrive temporaly wins
     buffer=StringIO()
     for pkt in fragmentsin:
         if pkt[IP].frag == 0:
@@ -30,6 +31,7 @@ def rfc791(fragmentsin):
     return wrapper
 
 def first(fragmentsin):
+    #First to arrive temporaly wins
     buffer=StringIO()
     for pkt in fragmentsin[::-1]:
         if pkt[IP].frag == 0:
@@ -44,6 +46,35 @@ def first(fragmentsin):
 
 
 def bsdright(fragmentsin):
+    #highest offset , Tie to last temporaly
+    buffer=StringIO()
+    for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True):
+        if pkt[IP].frag == 0:
+            wrapper = pkt
+        buffer.seek(pkt[IP].frag*8)
+        buffer.write(bytes(pkt[IP].payload))
+    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
+    del wrapper[IP].len
+    wrapper[IP].flags=0
+    del wrapper[IP].chksum
+    return wrapper
+
+def bsd(fragmentsin):
+    #lowest offset, Tie to first
+    buffer=StringIO()
+    for pkt in sorted(fragmentsin, key=lambda x:x[IP].frag, reverse=True)[::-1]:
+        if pkt[IP].frag == 0:
+            wrapper = pkt
+        buffer.seek(pkt[IP].frag*8)
+        buffer.write(bytes(pkt[IP].payload))
+    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
+    del wrapper[IP].len
+    wrapper[IP].flags=0
+    del wrapper[IP].chksum
+    return wrapper
+ 
+def linux(fragmentsin):
+    #Lowest offset, Tie to last
     buffer=StringIO()
     for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag):
         if pkt[IP].frag == 0:
@@ -56,31 +87,8 @@ def bsdright(fragmentsin):
     del wrapper[IP].chksum
     return wrapper
 
-def bsd(fragmentsin):
-    buffer=StringIO()
-    for pkt in sorted(fragmentsin, key=lambda x:x[IP].frag)[::-1]:
-        if pkt[IP].frag == 0:
-            wrapper = pkt
-        buffer.seek(pkt[IP].frag*8)
-        buffer.write(bytes(pkt[IP].payload))
-    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
-    del wrapper[IP].len
-    wrapper[IP].flags=0
-    del wrapper[IP].chksum
-    return wrapper
- 
-def linux(fragmentsin):
-    buffer=StringIO()
-    for pkt in sorted(fragmentsin, key= lambda x:x[IP].frag, reverse=True):
-        if pkt[IP].frag == 0:
-            wrapper = pkt
-        buffer.seek(pkt[IP].frag*8)
-        buffer.write(bytes(pkt[IP].payload))
-    wrapper[IP].payload = wrapper[IP].payload.__class__(bytes(buffer.getvalue()))
-    del wrapper[IP].len
-    wrapper[IP].flags=0
-    del wrapper[IP].chksum
-    return wrapper
+#The other policy sorted(x, key = lambda y:y[1])[::-1]
+
 
 def genjudyfrags():
     pkts=scapy.plist.PacketList()
