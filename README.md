@@ -3,7 +3,7 @@
 
 ### One Packet in => Six Packets out
 
-This module will reassemble fragmented packets using common used fragmentation reassembly techniques.  It then generates 5 pcap files.  One for each of the different reassembly engines. It also prints the payloads to the screen.
+This module will reassemble fragmented packets using common used fragmentation reassembly techniques.  It then generates 6 pcap files. It also prints the payloads to the screen and shows you how each of the operating systems would see the packets after they reassemble them using their defragmentation engine.
 
 This is a rewrite of the original released in 2012 to support Python3.
 [Associated GIAC SANS Gold Paper](https://www.sans.org/reading-room/whitepapers/tools/ip-fragment-reassembly-scapy-33969)
