@@ -120,11 +120,11 @@ def processfrags(fragmenttrain):
             pass
         print(as_str)
         return      
-    print("Reassembled using policy: First (Windows, SUN, MacOS, HPUX)")
+    print("Reassembled using policy: First (Windows*, SUN, MacOS*, HPUX)")
     print_frag(first(fragmenttrain)[Raw].load)
     print("\nReassembled using policy: Last/RFC791 (Cisco)")
     print_frag(rfc791(fragmenttrain)[Raw].load)
-    print("\nReassembled using policy: Linux (Umm.. Linux)")
+    print("\nReassembled using policy: Linux (Linux prior to v5.8)")
     print_frag(linux(fragmenttrain)[Raw].load)
     print("\nReassembled using policy: BSD (AIX, FreeBSD, HPUX, VMS)")
     print_frag(bsd(fragmenttrain)[Raw].load)
