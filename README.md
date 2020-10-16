@@ -13,7 +13,6 @@ This is a rewrite of the original released in 2012 to support Python3.
 ### Still an issue?
 
 10-16-2020: [Don Williams](https://twitter.com/bashwrapper) and I did a survey of the major OSes to confirm the status of their reassembly engines. Here are the results:
- default.
 
  - [Linux](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=c30f1fc041b74ecdb072dd44f858750414b8b19f) 
 : The Linux OS's have begun silently ignoring overlapping IPv4 fragments. IPv6 rejects them by defalt.
