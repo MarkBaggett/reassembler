@@ -95,15 +95,17 @@ def other(fragmentsin, fix_checksum=True):
     return clean_reassembled_packets(first_fragment, fix_checksum)
     
 
-def genjudyfrags():
+def genjudyfrags(ipaddr = "127.0.0.1", policy='first'):
+    chksums = {'first':22110, 'linux': 13886, 'bsd': 20054, 'bsdright':9774, 'rfc791': 7718, 'other':15942} 
     pkts=scapy.plist.PacketList()
-    pkts.append(IP(flags="MF",frag=0)/ICMP()/("1"*24))
-    pkts.append(IP(flags="MF",frag=5)/("2"*16))
-    pkts.append(IP(flags="MF",frag=7)/("3"*24))
-    pkts.append(IP(flags="MF",frag=2)/("4"*32))
-    pkts.append(IP(flags="MF",frag=7)/("5"*24))
-    pkts.append(IP(frag=10)/("6"*24))
+    pkts.append(IP(dst=ipaddr, flags="MF",frag=0)/ICMP(type=8,code=0,chksum=chksums[policy])/("1"*24))
+    pkts.append(IP(dst=ipaddr,flags="MF",proto="icmp",frag=5)/("2"*16))
+    pkts.append(IP(dst=ipaddr,flags="MF",proto="icmp",frag=7)/("3"*24))
+    pkts.append(IP(dst=ipaddr,flags="MF",proto="icmp",frag=2)/("4"*32))
+    pkts.append(IP(dst=ipaddr,flags="MF",proto="icmp",frag=7)/("5"*24))
+    pkts.append(IP(dst=ipaddr,frag=10,proto="icmp")/("6"*24))
     return pkts
+
 
 def processfrags(fragmenttrain, fix_checksum = True, print_bytes=False):
     def print_frag(bytes_in):
