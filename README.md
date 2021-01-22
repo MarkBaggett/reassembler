@@ -17,10 +17,10 @@ This is a rewrite of the original released in 2012 to support Python3.
  - [Linux](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=c30f1fc041b74ecdb072dd44f858750414b8b19f) 
 : The Linux OS's have begun silently ignoring overlapping IPv4 fragments. IPv6 rejects them by defalt.
 
- - [Windows](https://portal.msrc.microsoft.com/en-us/security-guidance/advisory/ADV180022): The posted "Fix" requires that you turn off ALL fragment reassembly, not just overlaps. It is not enabled by default.
+ - [Windows](https://portal.msrc.microsoft.com/en-us/security-guidance/advisory/ADV180022): The posted "Fix" requires that you turn off ALL fragment reassembly, not just overlaps. It is not enabled by default.  I have been unable to get any Windows OS to respond to overlaps since Vista.
 
  - Macintosh: Tested on 10-16-2020 and it was still reassembling overlapping fragments without complaint.
-
+ 
 ---
 
 ### Installing
@@ -60,7 +60,13 @@ optional arguments:
   -p PREFIX, --prefix PREFIX
                         Specify the prefix for file names
   -c, --checksum        Do not recalculate transport layer protocol checksums.
-````
+```
+
+To use the Policy identifier scanner requires root privilege and you must still put something in the pcap field even though it is not used (to be fixed later).  If you are using a python virtual environment then to use sudo you must provide the path to the python binary that is in the virtual environment.
+
+```
+sudo /path/to/venv/bin/python -m reassembler -ip 192.168.1.1/24 ignorepcap
+```
 
 ---
 
@@ -74,7 +80,14 @@ optional arguments:
 <Ether  type=IPv4 |<IP  flags= frag=0 proto=icmp |<ICMP  type=echo-request code=0 id=0x0 seq=0x0 |<Raw  load='111111111111111111111111444444442222222222222222333333333333333333333333666666666666666666666666' |>>>>
 >>> reassembler.linux(reassembler.genjudyfrags())
 <Ether  type=IPv4 |<IP  flags= frag=0 proto=icmp |<ICMP  type=echo-request code=0 id=0x0 seq=0x0 |<Raw  load='111111111111111111111111444444444444444422222222555555555555555555555555666666666666666666666666' |>>>>
->>> 
+>>> scan_network("192.168.1.1")
+Checking host 192.168.1.1:
+  + 192.168.1.1 responded to a ping request! 
+  + 192.168.1.1 is reassembling normal (non-overlapping) fragmented ping packets.
+  + 192.168.1.1 is NOT responding to overlapping fragments ping packets.
+  + Overlapping fragments ignored by 192.168.1.1
+>>> scan_network("192.168.1.1/24")
+
 ```
 
 
