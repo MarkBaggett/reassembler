@@ -62,7 +62,8 @@ optional arguments:
   -c, --checksum        Do not recalculate transport layer protocol checksums.
 ```
 
-To use the Policy identifier scanner requires root privilege and you must still put something in the pcap field even though it is not used (to be fixed later).  If you are using a python virtual environment then to use sudo you must provide the path to the python binary that is in the virtual environment.
+To use the Policy identifier scanner requires root privilege and you must still put something in the pcap field even though it is not used (to be fixed later).  If you are using a python virtual environment then to use sudo you must provide the path to the python binary that is in the virtual environment.  For now, this is initiated by an arp ping and is limited to host on your local network. This limitation will be removed soon.
+
 
 ```
 $ sudo /path/to/venv/bin/python -m reassembler -ip 192.168.1.1/24 ignorepcap
