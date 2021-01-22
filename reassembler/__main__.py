@@ -14,6 +14,7 @@ def cli():
     parser.add_argument('-q','--quiet',action='store_true',  help='Do not print payloads to screen.')  
     parser.add_argument('-p','--prefix',default='reassembled', help='Specify the prefix for file names')
     parser.add_argument('-c','--checksum',action="store_true", help='Do not recalculate transport layer protocol checksums.')
+    parser.add_argument('-ip','--identify-policy', dest="idpolicy", help='Given IP or NET/CIDR ex:192.168.1.1/24 this will identify reassembly policies used by host(s).')
     
 
     if (len(sys.argv)==1):
@@ -24,6 +25,10 @@ def cli():
 
     if options.demo:
         processfrags(genjudyfrags())
+
+    if options.idpolicy:
+        scan_network(options.idpolicy)
+        exit(0)
 
     if not os.path.exists(options.pcap):
         print("Packet capture file not found.")
