@@ -65,7 +65,7 @@ optional arguments:
 To use the Policy identifier scanner requires root privilege and you must still put something in the pcap field even though it is not used (to be fixed later).  If you are using a python virtual environment then to use sudo you must provide the path to the python binary that is in the virtual environment.
 
 ```
-sudo /path/to/venv/bin/python -m reassembler -ip 192.168.1.1/24 ignorepcap
+$ sudo /path/to/venv/bin/python -m reassembler -ip 192.168.1.1/24 ignorepcap
 ```
 
 ---
@@ -80,13 +80,14 @@ sudo /path/to/venv/bin/python -m reassembler -ip 192.168.1.1/24 ignorepcap
 <Ether  type=IPv4 |<IP  flags= frag=0 proto=icmp |<ICMP  type=echo-request code=0 id=0x0 seq=0x0 |<Raw  load='111111111111111111111111444444442222222222222222333333333333333333333333666666666666666666666666' |>>>>
 >>> reassembler.linux(reassembler.genjudyfrags())
 <Ether  type=IPv4 |<IP  flags= frag=0 proto=icmp |<ICMP  type=echo-request code=0 id=0x0 seq=0x0 |<Raw  load='111111111111111111111111444444444444444422222222555555555555555555555555666666666666666666666666' |>>>>
->>> scan_network("192.168.1.1")
+>>> reassembler.scan_network("192.168.1.1")
 Checking host 192.168.1.1:
   + 192.168.1.1 responded to a ping request! 
   + 192.168.1.1 is reassembling normal (non-overlapping) fragmented ping packets.
   + 192.168.1.1 is NOT responding to overlapping fragments ping packets.
   + Overlapping fragments ignored by 192.168.1.1
->>> scan_network("192.168.1.1/24")
+>>> reassembler.scan_network("192.168.1.1/24")
+<output truncated>
 
 ```
 
