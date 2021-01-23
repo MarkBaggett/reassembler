@@ -3,32 +3,25 @@ from scapy.all import *
 import argparse
 import os
 import sys
+import ipaddress
 
-   
-def cli():
-    parser=argparse.ArgumentParser(usage="reassembler [options] pcap_file")
-    parser.add_argument('pcap',default="",help='Read the specified packet capture')
-    parser.add_argument('-d','--demo',action='store_true', help='Generate classic fragment test pattern and reassemble it.')
-    parser.add_argument('-n','--no-write',action='store_true', dest="nowrite", help='Suppress writing 5 files to disk with the payloads.')
-    parser.add_argument('-b','--bytes',action='store_true',  help='Process Payloads as bytes and never as strings.')
-    parser.add_argument('-q','--quiet',action='store_true',  help='Do not print payloads to screen.')  
-    parser.add_argument('-p','--prefix',default='reassembled', help='Specify the prefix for file names')
-    parser.add_argument('-c','--checksum',action="store_true", help='Do not recalculate transport layer protocol checksums.')
-    parser.add_argument('-ip','--identify-policy', dest="idpolicy", help='Given IP or NET/CIDR ex:192.168.1.1/24 this will identify reassembly policies used by host(s).')
-    
 
-    if (len(sys.argv)==1):
-        parser.print_help()
-        sys.exit()
+def process_scan_args(args):
+    try:
+        tgt_list = ipaddress.ip_network(args.target)
+    except ValueError:
+        print("That doens't look like a valid IP Address or network range.")
+        print("A single IP address is in the form '192.168.1.1'.")
+        print("A network range in is the form '192.168.0.0/16'. Notice no host bits are set and a CIDR mask is provided.")
+        exit(1)
+    else:
+        for ipaddr in tgt_list:
+            reassembler.scan_host(str(ipaddr))
+    exit()
 
-    options=parser.parse_args()
-
+def process_assemble_args(options):
     if options.demo:
         processfrags(genjudyfrags())
-
-    if options.idpolicy:
-        scan_network(options.idpolicy)
-        exit(0)
 
     if not os.path.exists(options.pcap):
         print("Packet capture file not found.")
@@ -56,5 +49,35 @@ def cli():
                 processfrags(fragmenttrain, not options.checksum, options.bytes)
             if not options.nowrite:
                 writefrags(fragmenttrain, options.prefix, not options.checksum)
+    exit()
+
+def process_main(args):
+    print('The first argument must by either "scan" or "assemble".')
+    print("Try 'reassembler assemble -h' for help assembling fragmented packets. ")
+    print("Try 'reassembler scan -h' for help. with the scanning host to identify their reassembly policy.")
+    exit()
+
+   
+def cli():
+    parser=argparse.ArgumentParser(usage="Try 'reassembler scan -h' or 'reassembler assemble -h' for help.\n\n")
+    subparser = parser.add_subparsers()
+    assemble = subparser.add_parser("assemble")
+    assemble.add_argument('pcap',default="",help='Read the specified packet capture')
+    assemble.add_argument('-d','--demo',action='store_true', help='Generate classic fragment test pattern and reassemble it.')
+    assemble.add_argument('-n','--no-write',action='store_true', dest="nowrite", help='Suppress writing 5 files to disk with the payloads.')
+    assemble.add_argument('-b','--bytes',action='store_true',  help='Process Payloads as bytes and never as strings.')
+    assemble.add_argument('-q','--quiet',action='store_true',  help='Do not print payloads to screen.')  
+    assemble.add_argument('-p','--prefix',default='reassembled', help='Specify the prefix for file names')
+    assemble.add_argument('-c','--checksum',action="store_true", help='Do not recalculate transport layer protocol checksums.')
+    assemble.set_defaults(func=process_assemble_args)
+    scan = subparser.add_parser("scan")
+    scan.add_argument("target", help="Identify Policy used by specified IP Address or Network Range")
+    scan.set_defaults(func=process_scan_args)
+    parser.set_defaults(func = process_main )
+
+    args=parser.parse_args()
+    args.func(args)
+
+
 
 cli()

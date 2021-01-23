@@ -202,20 +202,21 @@ def fix_and_send(pkts, policy):
     return pkts, ans
 
 def match_payload(fragmented_pkts, icmp_reply):
-    matches = []
     if first(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
-        matches.append("FIRST")
-    if bsd(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
-        matches.append("BSD")
-    if bsdright(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
-        matches.append("BSDRIGHT")
-    if linux(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
-        matches.append("Linux")
-    if rfc791(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
-        matches.append("RFC791")
-    if other(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
-        matches.append("OTHER")
-    return matches or ["No Match"]
+        policy = "FIRST"
+    elif bsd(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
+        policy = "BSD"
+    elif bsdright(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
+        policy = "BSDRIGHT"
+    elif linux(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
+        policy = "Linux"
+    elif rfc791(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
+        policy = "RFC791"
+    elif other(fragmented_pkts)[Raw].load == icmp_reply[Raw].load:
+        policy = "OTHER"
+    else:
+        policy = f"No Match for {icmp_reply[Raw].load}"
+    return policy
 
 
 def processfrags(fragmenttrain, fix_checksum = True, print_bytes=False):
@@ -253,31 +254,29 @@ def writefrags(fragmenttrain, file_prefix, fix_checksum=True):
     wrpcap(f"{file_prefix}-{ipid}-other.pcap", other(fragmenttrain, fix_checksum))
 
 
-def scan_network(mask):
-    ans,unans = arping(mask, verbose=0)
-    for sent,recv in ans:
-        ipaddr = recv.psrc
-        print(f"Checking host {ipaddr}:")
-        #Lets see if we can ping it first.
-        result, msg = ping(ipaddr)
-        print(f"  + {msg}")
-        if not result:
-            continue
-        #Now try a fragmented ping
-        result,msg = normal_fragmented_ping(ipaddr)
-        print(f"  + {msg}")
-        if not result:
-            continue
-        #Now try an overlapping fragmented ping
-        result,msg = overlap_fragmented_ping(ipaddr)
-        print(f"  + {msg}")
-        #Last send overlap pattern and identify which policy
-        pkts = genoverlaps(ipaddr)
-        result = sr1(pkts, timeout=2, verbose=0)
-        if result:
-            print(f"  + {ipaddr} responds with reassembly {match_payload(pkts, result)}")
-        else:
-            print(f"  + Overlapping fragments ignored by {ipaddr}")
+def scan_host(ipaddr):
+    print(f"Checking host {ipaddr}:")
+    #Lets see if we can ping it first.
+    result, msg = ping(ipaddr)
+    print(f"  + {msg}")
+    if not result:
+        return
+    #Now try a fragmented ping
+    result,msg = normal_fragmented_ping(ipaddr)
+    print(f"  + {msg}")
+    if not result:
+        return
+    #Now try an overlapping fragmented ping
+    result,msg = overlap_fragmented_ping(ipaddr)
+    print(f"  + {msg}")
+    #Last send overlap pattern and identify which policy
+    pkts = genoverlaps(ipaddr)
+    result = sr1(pkts, timeout=2, verbose=0)
+    if result:
+        print(f"  + {ipaddr} responds with reassembly {match_payload(pkts, result)}")
+    else:
+        print(f"  + Overlapping fragments ignored by {ipaddr}")
+
 
 def scan_network2(mask):
     #Identifies policy by seeing which chksum causes the remote host to respond
