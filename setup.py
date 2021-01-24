@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="reassembler", 
-    version="2.0.0",
+    version="2.1.1",
     author="MarkBaggett",
     author_email="lo127001@gmail.com",
     description="Reassemble overlapping fragments into new pcaps with different OS reassembly policies.",
