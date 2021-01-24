@@ -4,17 +4,27 @@ import argparse
 import os
 import sys
 import ipaddress
+import socket
 
 
 def process_scan_args(args):
+    #Check for host name instead of IPs
+    target = args.target
+    if not target.replace(".","").replace(r"/","").isdigit():
+        hostname = target.split(r"/")[0]
+        ip = socket.gethostbyname(hostname)
+        target = target.replace(hostname, ip)
+    #Expand target specifier into network range.
     try:
-        tgt_list = ipaddress.ip_network(args.target)
+        tgt_list = ipaddress.ip_network(target, strict=False)
     except ValueError:
-        print("That doens't look like a valid IP Address or network range.")
+        print(f"{target} doens't look like a valid IP Address or network range.")
         print("A single IP address is in the form '192.168.1.1'.")
-        print("A network range in is the form '192.168.0.0/16'. Notice no host bits are set and a CIDR mask is provided.")
+        print("A network range uses CIDR notation in is the form '192.168.0.0/16'.")
+        print("I'll do my best to resolve hostnames for you so target.tst/24 might work.")
         exit(1)
     else:
+        #Scan em
         for ipaddr in tgt_list:
             reassembler.scan_host(str(ipaddr))
     exit()
